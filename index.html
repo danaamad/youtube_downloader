@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מוריד סרטוני YouTube</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d14;
+    --card: #16161f;
+    --border: #2a2a3e;
+    --red: #e63946;
+    --purple: #7b2d8b;
+    --text: #f0f0f8;
+    --sub: #888aaa;
+    --green: #2ecc71;
+  }
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-image: radial-gradient(ellipse at 20% 50%, rgba(123,45,139,0.15) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 20%, rgba(230,57,70,0.1) 0%, transparent 50%);
+  }
+
+  .container {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .logo {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .logo h1 {
+    font-size: 2.4rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--red), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+  }
+  .logo p {
+    color: var(--sub);
+    margin-top: 8px;
+    font-size: 1rem;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .url-wrap {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: #0d0d14;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'Heebo', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    direction: ltr;
+  }
+  input[type="text"]:focus { border-color: var(--red); }
+  input[type="text"]::placeholder { color: #444; }
+
+  .paste-btn {
+    background: var(--border);
+    border: none;
+    border-radius: 10px;
+    color: var(--text);
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: 'Heebo', sans-serif;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .paste-btn:hover { background: #3a3a55; }
+
+  .quality-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .q-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--sub);
+    cursor: pointer;
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .q-btn:hover, .q-btn.active {
+    border-color: var(--red);
+    color: var(--text);
+    background: rgba(230,57,70,0.1);
+  }
+
+  .action-btns {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .btn-main {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Heebo', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-video {
+    background: linear-gradient(135deg, var(--red), #c0202e);
+    color: white;
+  }
+  .btn-video:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(230,57,70,0.4); }
+  .btn-audio {
+    background: linear-gradient(135deg, var(--purple), #5a1f6a);
+    color: white;
+  }
+  .btn-audio:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(123,45,139,0.4); }
+  .btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+  /* Progress */
+  .progress-box {
+    display: none;
+    background: #0d0d14;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .progress-box.show { display: block; }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--sub);
+    margin-bottom: 10px;
+  }
+  .progress-bar-wrap {
+    background: var(--border);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--purple));
+    border-radius: 999px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+  .progress-bar.pulse {
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Result */
+  .result-box {
+    display: none;
+    margin-top: 16px;
+    background: rgba(46,204,113,0.1);
+    border: 1px solid rgba(46,204,113,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .result-box.show { display: block; }
+  .result-box .icon { font-size: 2rem; margin-bottom: 8px; }
+  .result-box p { color: var(--green); font-weight: 700; margin-bottom: 12px; }
+  .download-link {
+    display: inline-block;
+    background: var(--green);
+    color: #000;
+    padding: 10px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-family: 'Heebo', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .download-link:hover { opacity: 0.85; }
+
+  .error-box {
+    display: none;
+    margin-top: 16px;
+    background: rgba(230,57,70,0.1);
+    border: 1px solid rgba(230,57,70,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    color: var(--red);
+    text-align: center;
+  }
+  .error-box.show { display: block; }
+
+  .footer {
+    text-align: center;
+    margin-top: 24px;
+    color: var(--sub);
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <h1>🎬 מוריד YouTube</h1>
+    <p>הורד סרטונים ומוזיקה בקלות</p>
+  </div>
+
+  <div class="card">
+    <label>קישור לסרטון</label>
+    <div class="url-wrap">
+      <input type="text" id="urlInput" placeholder="הדבק קישור YouTube כאן..." />
+      <button class="paste-btn" onclick="pasteUrl()">📋 הדבק</button>
+    </div>
+
+    <label>איכות וידאו</label>
+    <div class="quality-grid">
+      <button class="q-btn active" data-q="best" onclick="setQ(this)">הכי טובה</button>
+      <button class="q-btn" data-q="1080" onclick="setQ(this)">1080p</button>
+      <button class="q-btn" data-q="720" onclick="setQ(this)">720p</button>
+      <button class="q-btn" data-q="480" onclick="setQ(this)">480p</button>
+      <button class="q-btn" data-q="360" onclick="setQ(this)">360p</button>
+    </div>
+
+    <div class="action-btns">
+      <button class="btn-main btn-video" id="btnVideo" onclick="startDownload(false)">
+        ⬇️ הורד סרטון
+      </button>
+      <button class="btn-main btn-audio" id="btnAudio" onclick="startDownload(true)">
+        🎵 שמע (MP3)
+      </button>
+    </div>
+
+    <div class="progress-box" id="progressBox">
+      <div class="progress-info">
+        <span id="progressText">מוריד...</span>
+        <span id="speedText"></span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar pulse" id="progressBar"></div>
+      </div>
+    </div>
+
+    <div class="result-box" id="resultBox">
+      <div class="icon">✅</div>
+      <p>ההורדה הושלמה!</p>
+      <a class="download-link" id="downloadLink" href="#">💾 לחץ להורדה</a>
+    </div>
+
+    <div class="error-box" id="errorBox">
+      ❌ <span id="errorText"></span>
+    </div>
+  </div>
+
+  <div class="footer">לשימוש אישי בלבד</div>
+</div>
+
+<script>
+  let selectedQ = 'best';
+  let pollInterval = null;
+
+  function setQ(btn) {
+    document.querySelectorAll('.q-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedQ = btn.dataset.q;
+  }
+
+  async function pasteUrl() {
+    try {
+      const text = await navigator.clipboard.readText();
+      document.getElementById('urlInput').value = text;
+    } catch {
+      document.getElementById('urlInput').focus();
+      alert('אנא הדבק ידנית עם Ctrl+V בתוך השדה');
+    }
+  }
+
+  function setLoading(on) {
+    document.getElementById('btnVideo').disabled = on;
+    document.getElementById('btnAudio').disabled = on;
+  }
+
+  function show(id) { document.getElementById(id).classList.add('show'); }
+  function hide(id) { document.getElementById(id).classList.remove('show'); }
+
+  async function startDownload(audioOnly) {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) { alert('אנא הכנס קישור YouTube'); return; }
+
+    hide('resultBox'); hide('errorBox');
+    show('progressBox');
+    setLoading(true);
+    document.getElementById('progressBar').style.width = '5%';
+    document.getElementById('progressText').textContent = 'מתחיל הורדה...';
+
+    const res = await fetch('/download', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url, quality: selectedQ, audio_only: audioOnly})
+    });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+
+    pollInterval = setInterval(() => pollStatus(data.job_id), 800);
+  }
+
+  async function pollStatus(jobId) {
+    const res = await fetch(`/status/${jobId}`);
+    const data = await res.json();
+
+    if (data.status === 'downloading') {
+      const pct = parseFloat(data.percent) || 0;
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressText').textContent = `מוריד... ${data.percent}`;
+      document.getElementById('speedText').textContent = data.speed;
+    } else if (data.status === 'done') {
+      clearInterval(pollInterval);
+      document.getElementById('progressBar').style.width = '100%';
+      document.getElementById('progressBar').classList.remove('pulse');
+      hide('progressBox');
+      show('resultBox');
+      document.getElementById('downloadLink').href = `/file/${encodeURIComponent(data.filename)}`;
+      document.getElementById('downloadLink').download = data.filename;
+      setLoading(false);
+    } else if (data.status === 'error') {
+      clearInterval(pollInterval);
+      showError(data.error);
+    }
+  }
+
+  function showError(msg) {
+    hide('progressBox');
+    show('errorBox');
+    document.getElementById('errorText').textContent = msg;
+    setLoading(false);
+  }
+</script>
+</body>
+</html>
